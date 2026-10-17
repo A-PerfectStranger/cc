@@ -1,11 +1,161 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Common Ground — Common Criteria field guide</title><link rel="stylesheet" href="style.css"></head><body>
-<aside class="sidebar"><a class="brand" href="#"><span class="brand-icon">c<span>g</span></span><span>common ground<small>THE SECURITY FIELD GUIDE</small></span></a><div class="edition"><span class="dot"></span> CC:2022 <span>PART 2 · REVISION 1</span></div><div class="nav-label">THE CATALOGUE <span>11 CLASSES</span></div><nav id="classes" aria-label="Security classes"></nav><div class="sidebar-foot"><span class="book-icon">▤</span><div>A standard, made clearer.<small>Built for learning. Ready for reference.</small></div></div></aside>
-<div class="workspace"><header><div class="breadcrumbs">Library <span>/</span> Security functional requirements</div><a href="common-criteria-2022-part2.pdf" target="_blank" rel="noopener">Original document ↗</a></header><main>
-<div class="eyebrow"><span></span> THE COMMON CRITERIA, DECODED</div><section class="intro"><div><h1>Understand the standard.<br><em>Find your requirement.</em></h1><p>A practical guide to security functional requirements.<br>Explore every family, component, and element — one layer at a time.</p></div><div class="seal"><span>COMMON CRITERIA</span><strong>CC</strong><span>2022 / PART 2</span></div></section>
-<div class="stats" id="stats"></div>
-<section class="tools"><label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search a family, component, element, or keyword…" aria-label="Search the catalogue"><kbd>/</kbd></label><button id="saved" aria-pressed="false">☆ <span>Saved</span><b id="saved-count">0</b></button></section>
-<section class="catalogue-heading"><div><div class="eyebrow" id="class-code">EXPLORE THE CATALOGUE</div><h2 id="view-title">All security families</h2></div><span id="result-count"></span></section>
-<div id="active-description" class="class-description"></div><div id="results" aria-live="polite"></div>
-<div class="guide-note"><span>ⓘ</span><p><strong>A guide, with the source close at hand.</strong> Summaries help you navigate; the original wording defines the requirements. TSF means the product’s security functions; TOE means the product being evaluated. Bracketed assignments and selections must be completed for your specific evaluation. Select whole components, including all their elements.</p></div>
-<footer><span>COMMON GROUND <i> / </i> A clearer path through Common Criteria</span><span>CCMB-2022-11-002 · November 2022</span></footer>
-</main></div><div id="toast" role="status"></div><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Common Ground — Common Criteria field guide</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <aside class="sidebar">
+      <a class="brand" href="#"
+        ><span class="brand-icon">c<span>g</span></span
+        ><span>common ground<small>THE SECURITY FIELD GUIDE</small></span></a
+      >
+      <div class="edition">
+        <span class="dot"></span> CC:2022 <span>PART 2 · REVISION 1</span>
+      </div>
+      <nav class="destinations" aria-label="Workspace">
+        <a href="#catalogue" id="catalogue-tab">Catalogue</a
+        ><a href="#projects" id="projects-tab">Projects</a>
+      </nav>
+      <label class="mobile-class" for="mobile-class"
+        >Security class<select id="mobile-class"></select
+      ></label>
+      <div class="nav-label">THE CATALOGUE <span>11 CLASSES</span></div>
+      <nav id="classes" aria-label="Security classes"></nav>
+      <div class="sidebar-foot">
+        <span class="book-icon">▤</span>
+        <div>
+          A standard, made clearer.<small
+            >Built for learning. Ready for reference.</small
+          >
+        </div>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header>
+        <div class="breadcrumbs">
+          Library <span>/</span> Security functional requirements
+        </div>
+        <a href="common-criteria-2022-part2.pdf" target="_blank" rel="noopener"
+          >Original document ↗</a
+        >
+      </header>
+      <main id="main">
+        <div id="storage-error" class="storage-error" role="alert" hidden></div>
+        <section id="project-area" hidden></section>
+        <div id="catalogue-hero">
+          <div class="eyebrow"><span></span> THE COMMON CRITERIA, DECODED</div>
+          <section class="intro">
+            <div>
+              <h1>
+                Understand the standard.<br /><em>Find your requirement.</em>
+              </h1>
+              <p>
+                A practical guide to security functional requirements.<br />Explore
+                every family, component, and element — one layer at a time.
+              </p>
+            </div>
+            <div class="seal">
+              <span>COMMON CRITERIA</span><strong>CC</strong
+              ><span>2022 / PART 2</span>
+            </div>
+          </section>
+          <div class="stats" id="stats"></div>
+        </div>
+        <section id="project-toolbar" class="project-toolbar"></section>
+        <section class="tools">
+          <label class="search"
+            ><span>⌕</span
+            ><input
+              id="search"
+              type="search"
+              placeholder="Search a family, component, element, or keyword…"
+              aria-label="Search the catalogue"
+            /><kbd>/</kbd></label
+          ><button
+            id="saved"
+            aria-label="Show saved reading bookmarks"
+            aria-pressed="false"
+          >
+            ☆ <span>Saved</span><b id="saved-count">0</b>
+          </button>
+        </section>
+        <section class="catalogue-heading">
+          <div>
+            <div class="eyebrow" id="class-code">EXPLORE THE CATALOGUE</div>
+            <h2 id="view-title">All security families</h2>
+          </div>
+          <span id="result-count"></span>
+        </section>
+        <div id="active-description" class="class-description"></div>
+        <div id="search-status" class="sr-only" role="status"></div>
+        <div id="results"></div>
+        <div class="guide-note">
+          <span>ⓘ</span>
+          <p>
+            <strong>A guide, with the source close at hand.</strong> Summaries
+            help you navigate; the original wording defines the requirements.
+            TSF means the product’s security functions; TOE means the product
+            being evaluated. Bracketed assignments and selections must be
+            completed for your specific evaluation. Select whole components,
+            including all their elements.
+          </p>
+        </div>
+        <footer>
+          <span
+            >COMMON GROUND <i> / </i> A clearer path through Common
+            Criteria</span
+          ><span>CCMB-2022-11-002 · November 2022</span>
+        </footer>
+      </main>
+    </div>
+    <div id="toast" role="status"></div>
+    <dialog id="project-dialog">
+      <form id="project-form">
+        <h2 id="project-form-title">New project</h2>
+        <label>Project name<input name="name" maxlength="160" required /></label
+        ><label
+          >Description<textarea
+            name="description"
+            maxlength="20000"
+          ></textarea></label
+        ><label
+          >TOE scope<textarea
+            name="scope"
+            maxlength="20000"
+            placeholder="Describe the product and its evaluation boundary"
+          ></textarea>
+        </label>
+        <p>Catalogue: CC:2022 Part 2 Revision 1</p>
+        <div class="actions">
+          <button type="button" data-close="project-dialog">Cancel</button
+          ><button class="primary" type="submit">Save project</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="import-dialog">
+      <h2>Review import</h2>
+      <div id="import-preview"></div>
+      <p>
+        A new project copy will be created. Existing projects will be preserved.
+      </p>
+      <div class="actions">
+        <button data-close="import-dialog">Cancel</button
+        ><button id="confirm-import" class="primary">
+          Import as new project
+        </button>
+      </div>
+    </dialog>
+    <input
+      id="import-file"
+      type="file"
+      accept="application/json,.json"
+      hidden
+    />
+    <script src="project-model.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -27,9 +27,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-      - name: Validate catalogue
+          node-version: "24"
+      - name: Install test tools
+        run: npm ci
+      - name: Validate catalogue and project model
         run: npm test
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Validate browser workflows
+        run: npm run test:browser
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
