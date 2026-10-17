@@ -198,45 +198,26 @@
     };
   }
   function markdown(p, idx) {
-    const m = metrics(p, idx),
-      lines = [
-        `# ${p.name}`,
-        `Catalogue: ${p.edition}`,
-        "",
-        p.description,
-        "",
-        `TOE scope: ${p.scope}`,
-        "",
-        `${m.components} components; ${m.elements} elements; ${m.verified} verified.`,
-        `${m.dependencies} dependency reviews pending; ${m.operations} operation reviews pending.`,
-        "",
-        "Progress is self-reported. Dependencies are manually reviewed, not automatically validated.",
-        "",
-      ];
-    for (const co of p.components) {
-      const c = idx.components.get(co);
-      lines.push(
-        `## ${c.class} / ${c.family} / ${c.id} — ${c.name}`,
-        `Source: CCMB-2022-11-002, page ${c.page}`,
-        c.elements.length ? "" : "DEPRECATED: use FCS_CKM.6.",
-        `Dependency review: ${p.reviews[co]?.reviewed ? "Reviewed manually" : "Pending"}`,
-        p.reviews[co]?.notes || "",
-        c.relationships,
-        "",
-      );
-      for (const e of c.elements) {
-        const a = annotation(p, e.id);
-        lines.push(
-          `### ${e.id} — ${a.status}`,
-          e.text,
-          "",
-          `Notes: ${a.notes}`,
-          `Operation completions: ${a.operations}`,
-          `Operations reviewed: ${a.operationsReviewed ? "Yes" : "No"}`,
-          `Evidence: ${a.evidence}`,
-          "",
-        );
+    const lines = [
+      `# ${p.name}`,
+      `Catalogue: ${p.edition}`,
+      "",
+      p.description,
+      "",
+      `${p.components.length} components selected`,
+      "",
+    ];
+    let family = "";
+    for (const id of p.components) {
+      const c = idx.components.get(id);
+      if (c.family !== family) {
+        family = c.family;
+        lines.push(`## ${c.class} / ${family}`, "");
       }
+      lines.push(
+        `- [x] ${c.id} — ${c.name}${c.elements.length ? "" : " (deprecated; use FCS_CKM.6)"}`,
+        `  Source: CCMB-2022-11-002, page ${c.page}`,
+      );
     }
     return lines.join("\n");
   }

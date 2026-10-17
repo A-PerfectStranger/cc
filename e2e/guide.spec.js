@@ -6,20 +6,17 @@ async function ready(page) {
 async function createProject(page, name) {
   await page.locator("#projects-tab").click();
   const projects = page.locator("#project-area");
-  await expect(projects.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
-  await projects.getByRole("button", { name: "New project", exact: true }).click();
+  await expect(
+    projects.getByRole("heading", { name: "Projects", exact: true }),
+  ).toBeVisible();
+  await projects
+    .getByRole("button", { name: "New project", exact: true })
+    .click();
   await page.locator('[name="name"]').fill(name);
   await page.locator('[name="description"]').fill("Project description");
   await page.locator('[name="scope"]').fill("Application boundary");
   await page.locator('#project-form button[type="submit"]').click();
   await expect(page.locator(".section-heading h1")).toHaveText(name);
-}
-async function addElement(page) {
-  await page.locator("#scope-toggle").click();
-  await page.locator("#search").fill("FAU_GEN.1.1");
-  await page.locator('[data-use="FAU_GEN.1"]').click();
-  await page.locator("#search").fill("");
-  await page.locator("#scope-toggle").click();
 }
 test("catalogue filters, stable keyboard focus, saved bookmarks, and reading state", async ({
   page,
@@ -44,104 +41,77 @@ test("catalogue filters, stable keyboard focus, saved bookmarks, and reading sta
   await page.reload();
   await expect(page.locator("#saved-count")).toHaveText("1");
 });
-test("whole-component scope, notes, progress, review, persistence, undo, and isolation", async ({
+test("project checklist persists selections, supports unchecking and keeps projects isolated", async ({
   page,
 }) => {
   await ready(page);
   await createProject(page, "Alpha");
-  await addElement(page);
-  await expect(page.locator(".element")).toHaveCount(2);
-  const notes = page.locator('[data-annotation="notes"]').first();
-  await notes.fill("Keep this evidence");
-  await page
-    .locator('[data-annotation="status"]')
-    .first()
-    .selectOption("Verified");
-  await page
-    .locator('[data-annotation="operations"]')
-    .first()
-    .fill("Basic audit events");
-  await page.locator('[data-annotation="operationsReviewed"]').first().check();
-  await page
-    .locator('[data-review="notes"]')
-    .fill("Considered hierarchy and alternatives");
-  await page.locator('[data-review="reviewed"]').check();
-  await expect(page.locator("#project-metrics")).toContainText(
-    "0 dependency reviews pending",
-  );
-  await page.reload();
-  await expect(page.locator('[data-annotation="notes"]').first()).toHaveValue(
-    "Keep this evidence",
+  const choice = page.locator('[data-check-component="FAU_GEN.1"]');
+  await expect(choice).not.toBeChecked();
+  await choice.check();
+  await expect(page.locator("#selection-count")).toHaveText(
+    "1 components selected",
   );
   await expect(
-    page.locator('[data-annotation="operationsReviewed"]').first(),
-  ).toBeChecked();
-  await page.locator('[data-component="FAU_GEN.1"]').click();
-  await expect(page.locator(".element")).toHaveCount(0);
-  await page.locator("#undo-removal").click();
-  await expect(page.locator('[data-annotation="notes"]').first()).toHaveValue(
-    "Keep this evidence",
-  );
+    page.locator("[data-annotation], [data-review], .element-editor"),
+  ).toHaveCount(0);
+  await page.reload();
+  await expect(choice).toBeChecked();
+  await page.locator("#selected-only").check();
+  await expect(page.locator("[data-check-component]")).toHaveCount(1);
+  // In selected-only mode the row disappears immediately after unchecking.
+  await choice.click();
+  await expect(page.locator("[data-check-component]")).toHaveCount(0);
+  await page.locator("#selected-only").uncheck();
+  await choice.check();
   await createProject(page, "Beta");
-  await expect(page.locator(".element")).toHaveCount(0);
-  await page.selectOption("#active-project", { label: "Alpha" });
-  await expect(page.locator('[data-annotation="notes"]').first()).toHaveValue(
-    "Keep this evidence",
-  );
+  await expect(choice).not.toBeChecked();
+  await page.locator("#projects-tab").click();
+  await page
+    .getByRole("heading", { name: "Alpha", exact: true })
+    .getByRole("link")
+    .click();
+  await expect(choice).toBeChecked();
   await page.locator("[data-edit]").click();
   await page.locator('[name="name"]').fill("Alpha renamed");
   await page.locator('#project-form button[type="submit"]').click();
   await expect(page.locator(".section-heading h1")).toHaveText("Alpha renamed");
 });
-test("family bulk selection, deprecation protection, and mobile layout", async ({
+test("checklist details are optional, deprecated components disabled, and mobile fits", async ({
   page,
 }) => {
   await ready(page);
   await createProject(page, "Scope");
-  await page.locator("#scope-toggle").click();
-  await page.locator("#search").fill("FCS_CKM");
-  await expect(page.locator('[data-component="FCS_CKM.4"]')).toBeDisabled();
-  await page.locator('[data-family="FCS_CKM"]').click();
-  await expect(page.locator('[data-family="FCS_CKM"]')).toBeDisabled();
-  await expect(page.locator("#project-metrics")).toContainText("5");
-  await page.locator("#search").fill("");
+  await expect(
+    page.locator('[data-check-component="FCS_CKM.4"]'),
+  ).toBeDisabled();
+  await page.locator("#search").fill("FAU_GEN.1.1");
+  await expect(page.locator("[data-check-component]")).toHaveCount(1);
+  await page.locator(".checklist-details summary").click();
+  await expect(page.locator(".checklist-details article")).toHaveCount(2);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#mobile-class")).toBeVisible();
-  await expect(page.locator('#mobile-class option[value="FIA"]')).toHaveText(
-    /Identification and authentication/,
-  );
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-  await page.locator("#scope-toggle").click();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
 });
-test("export/import round trip creates a copy, escapes content, and rejects bad files", async ({
+test("checklist export/import creates a copy and rejects malformed files", async ({
   page,
 }) => {
   await ready(page);
   await createProject(page, "<img src=x onerror=alert(1)>");
-  await addElement(page);
-  await page
-    .locator('[data-annotation="notes"]')
-    .first()
-    .fill("<script>unsafe()</script>");
+  await page.locator('[data-check-component="FAU_GEN.1"]').check();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     page.locator('[data-export="json"]').click(),
   ]);
-  const stream = await download.createReadStream();
-  const chunks = [];
+  const stream = await download.createReadStream(),
+    chunks = [];
   for await (const chunk of stream) chunks.push(chunk);
   const buffer = Buffer.concat(chunks);
-  const parsed = JSON.parse(buffer);
-  expect(parsed.requirements[0].elements[0].text).toContain("shall");
+  expect(JSON.parse(buffer).project.components).toEqual(["FAU_GEN.1"]);
   await page
     .locator("#import-file")
     .setInputFiles({
@@ -152,10 +122,18 @@ test("export/import round trip creates a copy, escapes content, and rejects bad 
   await expect(page.locator("#import-dialog")).toBeVisible();
   await page.locator("#confirm-import").click();
   await expect(page.locator(".section-heading h1")).toContainText("(imported)");
-  await expect(page.locator('[data-annotation="notes"]').first()).toHaveValue(
-    "<script>unsafe()</script>",
-  );
+  await expect(
+    page.locator('[data-check-component="FAU_GEN.1"]'),
+  ).toBeChecked();
   expect(await page.locator("#project-area img").count()).toBe(0);
+  const [markdown] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator('[data-export="md"]').click(),
+  ]);
+  const mdStream = await markdown.createReadStream(),
+    md = [];
+  for await (const chunk of mdStream) md.push(chunk);
+  expect(Buffer.concat(md).toString()).toContain("- [x] FAU_GEN.1");
   await page.locator("#projects-tab").click();
   await expect(page.locator(".project-card")).toHaveCount(2);
   await page
@@ -224,7 +202,6 @@ test("sampled normal-text contrast meets WCAG AA", async ({ page }) => {
   for (const ratio of ratios) expect(ratio).toBeGreaterThanOrEqual(4.5);
 });
 
-
 test("project creation waits for delayed hash navigation", async ({ page }) => {
   await page.addInitScript(() => {
     let delayed = false;
@@ -232,7 +209,10 @@ test("project creation waits for delayed hash navigation", async ({ page }) => {
       if (!delayed && location.hash === "#projects") {
         delayed = true;
         event.stopImmediatePropagation();
-        setTimeout(() => window.dispatchEvent(new HashChangeEvent("hashchange")), 200);
+        setTimeout(
+          () => window.dispatchEvent(new HashChangeEvent("hashchange")),
+          200,
+        );
       }
     });
   });
@@ -242,5 +222,7 @@ test("project creation waits for delayed hash navigation", async ({ page }) => {
   await expect(page.locator("#project-toolbar [data-new]")).toBeVisible();
   await createProject(page, "Delayed navigation project");
   await expect(page.locator("#project-dialog")).not.toBeVisible();
-  await expect(page.locator(".section-heading h1")).toHaveText("Delayed navigation project");
+  await expect(page.locator(".section-heading h1")).toHaveText(
+    "Delayed navigation project",
+  );
 });

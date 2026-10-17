@@ -267,28 +267,11 @@ function projectCards() {
     state.projects
       .map((p) => {
         const m = M.metrics(p, idx);
-        return `<article class="project-card"><span class="eyebrow">${escapeHTML(p.edition)}</span><h2><a href="#project/${encodeURIComponent(p.id)}">${escapeHTML(p.name)}</a></h2><p>${escapeHTML(p.description || "No description yet.")}</p><div class="project-card-count">${m.families} families · ${m.components} components · ${m.elements} elements</div><p>${m.verified} verified · ${m.operations} operation reviews pending</p><a class="button primary" href="#project/${encodeURIComponent(p.id)}">Open project →</a></article>`;
+        return `<article class="project-card"><span class="eyebrow">${escapeHTML(p.edition)}</span><h2><a href="#project/${encodeURIComponent(p.id)}">${escapeHTML(p.name)}</a></h2><p>${escapeHTML(p.description || "No description yet.")}</p><div class="project-card-count">${m.families} families · ${m.components} components · ${m.elements} elements</div><a class="button primary" href="#project/${encodeURIComponent(p.id)}">Open project →</a></article>`;
       })
       .join("") ||
     '<div class="empty"><h2>Your first project starts here.</h2><p>Create a project, then browse the catalogue to add components.</p><button class="primary" data-new>Create project</button></div>'
   }</div>`;
-}
-function metricHTML(p) {
-  const m = M.metrics(p, idx);
-  return `<div class="project-metrics">${[
-    [m.families, "Families"],
-    [m.components, "Components"],
-    [m.elements, "Elements"],
-    [m.verified + "/" + m.elements, "Verified"],
-  ]
-    .map(([n, l]) => `<div><strong>${n}</strong><span>${l}</span></div>`)
-    .join(
-      "",
-    )}</div><div class="review-summary">${m.dependencies} dependency reviews pending · ${m.operations} operation reviews pending${m.deprecated ? ` · ${m.deprecated} deprecated component(s): remove and use FCS_CKM.6` : ""}</div>`;
-}
-function refreshMetrics() {
-  if (view === "project" && project())
-    $("#project-metrics").innerHTML = metricHTML(project());
 }
 function renderProjectArea() {
   const area = $("#project-area");
@@ -299,13 +282,66 @@ function renderProjectArea() {
     return;
   }
   const p = project();
-  area.innerHTML = `<div class="section-heading compact"><div><a class="back-link" href="#projects">← All projects</a><h1>${escapeHTML(p.name)}</h1><p>${escapeHTML(p.description)}</p></div><div class="actions"><button data-edit>Edit details</button><button data-export="json">Export JSON</button><button data-export="md">Export Markdown</button><button data-import>Import</button></div></div><p class="toe-scope"><strong>TOE scope:</strong> ${escapeHTML(p.scope || "Not defined yet. Edit project details to describe the evaluated product.")}</p><div id="project-metrics">${metricHTML(p)}</div><p class="local-note">${escapeHTML(p.edition)} · Stored in this browser. Progress is self-reported; it does not establish certification. Dependency satisfaction is not automatically validated.</p><div class="scope-controls"><button id="scope-toggle" aria-pressed="${scopeOnly}">${scopeOnly ? "Show full catalogue" : "Show selected scope only"}</button><span>${scopeOnly ? "Showing complete selected components." : "Browse and add requirements to this project."}</span><button id="undo-removal" ${lastRemoval?.projectId === p.id ? "" : "hidden"}>Undo last removal</button></div>`;
+  area.innerHTML = `<div class="section-heading compact"><div><a class="back-link" href="#projects">← All projects</a><h1>${escapeHTML(p.name)}</h1>${p.description ? `<p>${escapeHTML(p.description)}</p>` : ""}</div><div class="actions"><button data-edit>Edit details</button><button data-export="json">Export JSON</button><button data-export="md">Export Markdown</button><button data-import>Import</button></div></div><div class="checklist-toolbar"><span id="selection-count">${p.components.length} components selected</span><label class="check-label"><input id="selected-only" type="checkbox" ${scopeOnly ? "checked" : ""}> Show selected only</label></div>`;
 }
-function annotationsHTML(p, e) {
-  const a = M.annotation(p, e.id);
-  return `<div class="element-editor"><label>Status<select data-annotation="status" data-element="${e.id}">${M.STATUSES.map((s) => `<option ${a.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label><label>Notes<textarea maxlength="20000" data-annotation="notes" data-element="${e.id}">${escapeHTML(a.notes)}</textarea></label><label>Evidence links / references<textarea maxlength="20000" data-annotation="evidence" data-element="${e.id}" placeholder="Record evidence locations; links are stored as text">${escapeHTML(a.evidence)}</textarea></label>${e.text.includes("[") ? `<div class="operation-editor"><strong>Assignments & selections</strong><p>Use the bracketed prompts in the original wording above. Record your choices here; the original requirement stays unchanged.</p><label>Project-specific completions<textarea maxlength="20000" data-annotation="operations" data-element="${e.id}">${escapeHTML(a.operations)}</textarea></label><label class="check-label"><input type="checkbox" data-annotation="operationsReviewed" data-element="${e.id}" ${a.operationsReviewed ? "checked" : ""}> I reviewed all assignments and selections for this element</label>${!a.operationsReviewed ? '<span class="pending">Operation review pending</span>' : ""}</div>` : ""}</div>`;
+function renderChecklist() {
+  const p = project();
+  syncNav();
+  $("#class-code").textContent = "PROJECT CHECKLIST";
+  $("#view-title").textContent = "Which components will you use?";
+  $("#active-description").textContent =
+    "Check a component to include all its elements. Expand details when you need a reference.";
+  let families = 0,
+    components = 0;
+  $("#results").innerHTML =
+    catalogue
+      .filter((c) => active === "all" || c.id === active)
+      .map((c) => {
+        const groups = c.families
+          .map((f) => {
+            const rows = f.components
+              .filter(
+                (co) =>
+                  (!scopeOnly || p.components.includes(co.id)) &&
+                  (!query ||
+                    matches(
+                      f.id,
+                      f.name,
+                      definitions[f.id],
+                      co.id,
+                      co.name,
+                      ...co.elements.map((e) => e.id + " " + e.text),
+                    )),
+              )
+              .map((co) => {
+                components++;
+                const selected = p.components.includes(co.id),
+                  deprecated = !co.elements.length;
+                return `<div class="checklist-row"><label class="component-choice"><input type="checkbox" data-check-component="${co.id}" ${selected ? "checked" : ""} ${deprecated && !selected ? "disabled" : ""}><span><span class="tag">${highlight(co.id)}</span><strong>${highlight(co.name)}</strong>${deprecated ? "<small>Deprecated — use FCS_CKM.6</small>" : ""}</span></label><details class="checklist-details" ${detail("check-" + co.id)}><summary>Details · ${co.elements.length} elements</summary><p>${escapeHTML(definitions[f.id])}</p>${co.elements.map((e) => `<article><code>${highlight(e.id)}</code><p>${highlight(simple(e.text))}</p></article>`).join("")}<a class="source" href="common-criteria-2022-part2.pdf#page=${co.page}" target="_blank" rel="noopener">View source · page ${co.page} ↗</a></details></div>`;
+              })
+              .join("");
+            if (!rows) return "";
+            families++;
+            return `<section class="checklist-family"><h3><code>${f.id}</code> ${escapeHTML(f.name)}</h3>${rows}</section>`;
+          })
+          .join("");
+        return groups
+          ? `<section class="class-group"><h2 class="class-group-title">${c.id} · ${escapeHTML(c.name)}</h2>${groups}</section>`
+          : "";
+      })
+      .join("") ||
+    '<div class="empty"><h3>No components in this view.</h3><p>Clear your search or turn off “Show selected only”.</p><button id="reset">Reset filters</button></div>';
+  const counts = `${families} families · ${components} components`;
+  $("#result-count").textContent = counts;
+  $("#search-status").textContent = counts;
+  $("#selection-count").textContent =
+    p.components.length + " components selected";
 }
 function renderResults() {
+  if (view === "project") {
+    renderChecklist();
+    return;
+  }
   const p = project(),
     projectView = view === "project";
   const focus = document.activeElement?.dataset?.focus;
@@ -364,7 +400,7 @@ function renderResults() {
               componentCount++;
               elementCount += elements.length;
               const deprecated = !co.elements.length;
-              return `<details class="component" ${detail(co.id, !!query || (projectView && scopeOnly))}><summary><span class="tag">${highlight(co.id)}</span><strong>${highlight(co.name)}</strong><span class="component-count">${deprecated ? "Deprecated" : co.elements.length + " elements"} <span class="chevron">›</span></span></summary><div class="component-body"><p class="component-intro">${deprecated ? "Deprecated in CC:2022. Use FCS_CKM.6 for timing and event of cryptographic key destruction." : `Focus: ${highlight(co.name)}. ${escapeHTML(definitions[f.id])}`}</p><div class="component-actions">${p ? `<button data-component="${co.id}" data-focus="component-${co.id}" ${deprecated && !included ? "disabled" : ""} class="${included ? "selected" : "primary"}">${included ? "Remove from project" : deprecated ? "Deprecated — unavailable" : "Add component to project"}</button><span>${included ? "Complete component included" : escapeHTML(p.name)}</span>` : '<a href="#projects">Create or choose a project to select requirements →</a>'}</div>${elements.map((e) => `<article class="element" id="${e.id}"><div class="element-head"><code>${highlight(e.id)}</code><div class="actions">${p && !included ? `<button data-use="${co.id}" data-focus="use-${e.id}">Use in project</button>` : ""}<button class="bookmark" data-save="${e.id}" data-focus="save-${e.id}" aria-pressed="${saved.has(e.id)}" aria-label="${saved.has(e.id) ? "Unsave" : "Save"} ${e.id}">${saved.has(e.id) ? "★" : "☆"}</button></div></div><p>${highlight(simple(e.text))}</p><details class="original" ${detail("original-" + e.id, projectView && included && e.text.includes("["))}><summary>Original requirement & operation prompts</summary><p>${highlight(e.text)}</p></details>${p && included && projectView ? annotationsHTML(p, e) : ""}</article>`).join("")}<details class="relationships" ${detail("dependencies-" + co.id, projectView && included)}><summary>Dependencies & component relationships</summary><p>${escapeHTML(co.relationships.replace("Component relationships", "").trim())}</p>${p && included && projectView ? `<div class="dependency-editor"><p>Manual review only. Alternatives and hierarchical substitutions are not automatically resolved.</p><label>Review notes<textarea maxlength="20000" data-review="notes" data-component-id="${co.id}">${escapeHTML(p.reviews[co.id]?.notes || "")}</textarea></label><label class="check-label"><input type="checkbox" data-review="reviewed" data-component-id="${co.id}" ${p.reviews[co.id]?.reviewed ? "checked" : ""}> I reviewed the dependencies and documented my decisions</label></div>` : ""}</details><a class="source" target="_blank" rel="noopener" href="common-criteria-2022-part2.pdf#page=${co.page}">View source · page ${co.page} ↗</a></div></details>`;
+              return `<details class="component" ${detail(co.id, !!query || (projectView && scopeOnly))}><summary><span class="tag">${highlight(co.id)}</span><strong>${highlight(co.name)}</strong><span class="component-count">${deprecated ? "Deprecated" : co.elements.length + " elements"} <span class="chevron">›</span></span></summary><div class="component-body"><p class="component-intro">${deprecated ? "Deprecated in CC:2022. Use FCS_CKM.6 for timing and event of cryptographic key destruction." : `Focus: ${highlight(co.name)}. ${escapeHTML(definitions[f.id])}`}</p><div class="component-actions">${p ? `<button data-component="${co.id}" data-focus="component-${co.id}" ${deprecated && !included ? "disabled" : ""} class="${included ? "selected" : "primary"}">${included ? "Remove from project" : deprecated ? "Deprecated — unavailable" : "Add component to project"}</button><span>${included ? "Complete component included" : escapeHTML(p.name)}</span>` : '<a href="#projects">Create or choose a project to select requirements →</a>'}</div>${elements.map((e) => `<article class="element" id="${e.id}"><div class="element-head"><code>${highlight(e.id)}</code><div class="actions">${p && !included ? `<button data-use="${co.id}" data-focus="use-${e.id}">Use in project</button>` : ""}<button class="bookmark" data-save="${e.id}" data-focus="save-${e.id}" aria-pressed="${saved.has(e.id)}" aria-label="${saved.has(e.id) ? "Unsave" : "Save"} ${e.id}">${saved.has(e.id) ? "★" : "☆"}</button></div></div><p>${highlight(simple(e.text))}</p><details class="original" ${detail("original-" + e.id, projectView && included && e.text.includes("["))}><summary>Original requirement & operation prompts</summary><p>${highlight(e.text)}</p></details></article>`).join("")}<details class="relationships" ${detail("dependencies-" + co.id, projectView && included)}><summary>Dependencies & component relationships</summary><p>${escapeHTML(co.relationships.replace("Component relationships", "").trim())}</p></details><a class="source" target="_blank" rel="noopener" href="common-criteria-2022-part2.pdf#page=${co.page}">View source · page ${co.page} ↗</a></div></details>`;
             })
             .join("");
           if (!components) return "";
@@ -397,11 +433,13 @@ function render() {
   syncNav();
   $("#catalogue-hero").hidden = view !== "catalogue";
   renderProjectArea();
-  $("#project-toolbar").hidden = view === "projects";
+  $("#project-toolbar").hidden = view !== "catalogue";
   document.querySelector(".tools").hidden = view === "projects";
   document.querySelector(".catalogue-heading").hidden = view === "projects";
   $("#active-description").hidden = view === "projects";
   $("#results").hidden = view === "projects";
+  $("#saved").hidden = view !== "catalogue";
+  document.querySelector(".guide-note").hidden = view !== "catalogue";
   if (view !== "projects") {
     renderToolbar();
     renderResults();
@@ -431,7 +469,7 @@ function route() {
   query = "";
   savedOnly = false;
   $("#search").value = "";
-  scopeOnly = true;
+  scopeOnly = false;
   render();
 }
 function download(name, contents, type) {
@@ -632,61 +670,26 @@ document.addEventListener("change", (e) => {
     else render();
     return;
   }
-  const p = project();
-  if (!p) return;
-  if (e.target.dataset.annotation) {
-    const id = e.target.dataset.element,
-      field = e.target.dataset.annotation;
-    p.annotations[id] = {
-      ...M.annotation(p, id),
-      [field]:
-        field === "operationsReviewed" ? e.target.checked : e.target.value,
-    };
-    if (field === "operations") p.annotations[id].operationsReviewed = false;
-    M.touch(p);
-    const ok = persist();
-    refreshMetrics();
-    if (field === "operationsReviewed" || field === "operations") {
-      const op = e.target.closest(".operation-editor");
-      const checkbox = op.querySelector(
-        '[data-annotation="operationsReviewed"]',
-      );
-      checkbox.checked = p.annotations[id].operationsReviewed;
-      let pending = op.querySelector(".pending");
-      if (p.annotations[id].operationsReviewed) pending?.remove();
-      else if (!pending) {
-        pending = document.createElement("span");
-        pending.className = "pending";
-        pending.textContent = "Operation review pending";
-        op.append(pending);
-      }
-    }
-    if (ok && !e.detail?.quiet) notify("Project changes saved.");
+  if (e.target.id === "selected-only") {
+    scopeOnly = e.target.checked;
+    renderResults();
+    return;
   }
-  if (e.target.dataset.review) {
-    const id = e.target.dataset.componentId,
-      field = e.target.dataset.review;
-    p.reviews[id] = {
-      reviewed: false,
-      notes: "",
-      ...p.reviews[id],
-      [field]: field === "reviewed" ? e.target.checked : e.target.value,
-    };
-    M.touch(p);
-    persist();
-    refreshMetrics();
-  }
-});
-// Save text as it is typed, including before navigation or export.
-document.addEventListener("input", (e) => {
-  if (
-    (e.target.dataset.annotation || e.target.dataset.review) &&
-    e.target.type !== "checkbox" &&
-    e.target.tagName !== "SELECT"
-  )
-    e.target.dispatchEvent(
-      new CustomEvent("change", { bubbles: true, detail: { quiet: true } }),
+  const id = e.target.dataset.checkComponent;
+  if (id && project()) {
+    const p = project();
+    if (e.target.checked) M.select(p, [id], idx);
+    else M.remove(p, id);
+    saveMessage(
+      e.target.checked ? "Component selected." : "Component unselected.",
     );
+    if (scopeOnly) {
+      renderResults();
+      $("#selected-only").focus({ preventScroll: true });
+    } else
+      $("#selection-count").textContent =
+        p.components.length + " components selected";
+  }
 });
 $("#project-form").addEventListener("submit", (e) => {
   e.preventDefault();

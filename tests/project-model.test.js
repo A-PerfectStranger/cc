@@ -47,7 +47,7 @@ test("backup round trip preserves operations, status, notes, and manual review",
   const c = M.copy(q);
   assert.notEqual(c.id, p.id);
   assert.equal(c.annotations["FAU_GEN.1.1"].notes, "N");
-  assert.match(M.markdown(p, idx), /choice/);
+  assert.match(M.markdown(p, idx), /- \[x\] FAU_GEN.1/);
 });
 test("imports reject unknown IDs, invalid statuses, unsupported versions and oversized files", () => {
   const p = M.create("A");
@@ -102,8 +102,8 @@ test("versioned persistence round trip and storage failures", () => {
   );
 });
 
-test('imported copies of maximum-length names remain valid after reload', () => {
-  const project = M.create('A'.repeat(160));
+test("imported copies of maximum-length names remain valid after reload", () => {
+  const project = M.create("A".repeat(160));
   const copy = M.copy(project);
   assert.equal(copy.name.length, 160);
   assert.doesNotThrow(() => M.validate(copy, idx));

@@ -30,11 +30,11 @@ The workflow attempts to enable Pages automatically. If repository permissions o
 
 ## Project workspace
 
-Open **Projects** to create a named project with a description and TOE boundary. Use the active-project selector to choose where catalogue selections go. Families offer bulk selection of their active components; using an individual element includes its entire parent component and all its elements. Deprecated FCS_CKM.4 cannot be newly selected.
+Open **Projects** to create or choose a project. Check a component to use it; uncheck it to leave it out. All elements of a selected component are included together. Search or filter by class, use **Show selected only**, and expand **Details** to read the elements. Deprecated FCS_CKM.4 cannot be newly selected.
 
-Within a project, switch between the selected scope and the full catalogue. Record element status, notes, evidence references, and assignment/selection completions. Operation reviews and dependency reviews are separate from implementation progress. Dependencies are displayed for manual review; alternatives and hierarchical substitutions are not automatically resolved. Removing a component preserves its notes and offers undo.
+Projects are stored in this browser on the current site origin. Export JSON for an editable backup or Markdown for a component checklist. JSON import previews the file and creates a new copy without replacing existing projects. Existing project selections and legacy annotations are preserved in JSON backups; the project UI no longer has status, note, evidence, operation-completion, or dependency-review forms.
 
-Projects and existing reading bookmarks stay in local browser storage on the current site origin. They are not synchronized or sent to GitHub. Export each project as JSON for a complete editable backup, or Markdown for review. JSON import previews the project and creates a new copy. Invalid schemas, unknown IDs, unsupported editions, and files over 2 MB are rejected. Imported deprecated components are flagged. If storage fails, the app shows a persistent warning, keeps the current session in memory, and supports export. Corrupt stored project records are not overwritten.
+Malformed files, unknown IDs, unsupported editions, and imports over 2 MB are rejected. Storage failures are shown explicitly, with an export option. Projects are not synchronized or sent to GitHub.
 
 ## Development validation
 
