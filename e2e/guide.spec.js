@@ -5,7 +5,9 @@ async function ready(page) {
 }
 async function createProject(page, name) {
   await page.locator("#projects-tab").click();
-  await page.locator("[data-new]").first().click();
+  const projects = page.locator("#project-area");
+  await expect(projects.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
+  await projects.getByRole("button", { name: "New project", exact: true }).click();
   await page.locator('[name="name"]').fill(name);
   await page.locator('[name="description"]').fill("Project description");
   await page.locator('[name="scope"]').fill("Application boundary");
@@ -220,4 +222,25 @@ test("sampled normal-text contrast meets WCAG AA", async ({ page }) => {
     });
   });
   for (const ratio of ratios) expect(ratio).toBeGreaterThanOrEqual(4.5);
+});
+
+
+test("project creation waits for delayed hash navigation", async ({ page }) => {
+  await page.addInitScript(() => {
+    let delayed = false;
+    window.addEventListener("hashchange", (event) => {
+      if (!delayed && location.hash === "#projects") {
+        delayed = true;
+        event.stopImmediatePropagation();
+        setTimeout(() => window.dispatchEvent(new HashChangeEvent("hashchange")), 200);
+      }
+    });
+  });
+  await ready(page);
+  // The catalogue toolbar already has a New project button. It becomes hidden
+  // when hash navigation renders Projects; selectors must target the workspace.
+  await expect(page.locator("#project-toolbar [data-new]")).toBeVisible();
+  await createProject(page, "Delayed navigation project");
+  await expect(page.locator("#project-dialog")).not.toBeVisible();
+  await expect(page.locator(".section-heading h1")).toHaveText("Delayed navigation project");
 });
