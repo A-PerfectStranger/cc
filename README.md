@@ -18,3 +18,9 @@ Family descriptions are editorial plain-language explanations. Element explanati
 The app runs without external services. Optional Google fonts have local serif and sans-serif fallbacks. Saved elements stay on the current browser/device.
 
 `public/catalogue.json` was extracted from the supplied PDF with `pdftotext -layout`. `scripts/extract.py` documents the extraction and expects the text at `/tmp/cc.txt`.
+
+## GitHub Pages
+
+`.github/workflows/pages.yaml` tests the catalogue and publishes `public/` on every push to `main`, or on manual dispatch. All site assets use relative paths, so the guide works under the repository's Pages path. No server or build step is needed on Pages.
+
+The workflow attempts to enable Pages automatically. If repository permissions or organization policy prevent this, an administrator must select **GitHub Actions** under **Settings → Pages → Build and deployment → Source**, then rerun the workflow.
